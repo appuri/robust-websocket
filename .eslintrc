@@ -1,0 +1,19 @@
+{
+  "extends": "eslint:recommended",
+  "env": {
+    "browser": true,
+    "amd": true,
+    "es6": true
+  },
+  "rules": {
+    "brace-style": [1, "1tbs", { "allowSingleLine": true }],
+    "comma-spacing": 1,
+    "curly": 1,
+    "key-spacing": 1,
+    "no-return-assign": 1,
+    "no-shadow": 1,
+    "no-trailing-spaces": 1,
+    "quotes": [1, "single"],
+    "space-infix-ops": 1
+  }
+}

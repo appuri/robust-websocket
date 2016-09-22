@@ -1,9 +1,46 @@
-describe('Robust Websocket', function() {
+describe('RobustWebSocket', function() {
+  var ws
+  afterEach(function() {
+    try {
+      ws && ws.close()
+    } catch (e) {}
+  })
+
+  function wrap(fn, done) {
+    return function() {
+      try {
+        fn.apply(this, arguments)
+      } catch(e) {
+        done(e)
+      }
+    }
+  }
+
   describe('web standards behavior', function() {
-    it('should open a connection when initialized, emitting events')
-    it('should forward messages and errors to the client via event listeners')
+    it('should forward messages and errors to the client via event listeners', function(done) {
+      ws = new RobustWebSocket('ws://localhost:11099/echo')
+
+      ws.addEventListener('open', wrap(function(evt) {
+        this.should.equal(ws)
+        evt.target.should.be.instanceof(WebSocket)
+        ws.send('hello!')
+      }, done))
+
+      var onmessage = sinon.spy(function(evt) {
+        evt.data.should.equal('hello!')
+        evt.target.should.be.instanceof(WebSocket)
+        ws.close()
+      })
+      ws.addEventListener('message', wrap(onmessage, done))
+
+      ws.addEventListener('close', wrap(function() {
+        onmessage.should.have.been.calledOnce
+        done()
+      }, done))
+    })
+
     it('should forward messages and errors to the client via on* properties')
-    it('should proxy close and send methods')
+    it('should proxy read only properties')
     it('should rethrow errors when instantiated')
     it('should work in a web worker')
     it('should work with different binary types')

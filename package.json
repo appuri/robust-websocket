@@ -23,5 +23,13 @@
   "bugs": {
     "url": "https://github.com/appuri/robust-websocket/issues"
   },
-  "homepage": "https://github.com/appuri/robust-websocket#readme"
+  "homepage": "https://github.com/appuri/robust-websocket#readme",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "^3.0.2",
+    "qs": "^6.2.1",
+    "sinon-browser-only": "^1.12.1",
+    "sinon-chai": "^2.8.0",
+    "ws": "^1.1.1"
+  }
 }

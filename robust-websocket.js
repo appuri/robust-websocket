@@ -4,43 +4,14 @@
   } else if (typeof exports === 'object' && typeof module === 'object') {
     module.exports = factory()
   } else {
-    global.RobustWebsocket = factory()
+    global.RobustWebSocket = factory()
   }
 })(function() {
 
-  function inherit(child, parent) {
-    for (var key in parent) {
-      if (parent.hasOwnProperty(key)) child[key] = parent[key];
-    }
-
-    function ctor() {
-      this.constructor = child;
-    }
-    ctor.prototype = parent.prototype;
-    child.prototype = new ctor();
-    child.__super__ = parent.prototype;
-  }
-
-  var standardEvents = ['open', 'close', 'message', 'error']
-
-  var RobustWebsocket = function(url, opts) {
+  var RobustWebSocket = function(url, opts) {
     var realWs, self = this
 
-    function newWebSocket() {
-      realWs = new WebSocket(url)
-      realWs.binaryType = self.binaryType
-
-      standardEvents.forEach(function(e) {
-        realWs.addEventListener(e, function() {
-          var cb = self['on' + e]
-          if (typeof cb === 'function') {
-            return cb.apply(self, arguments)
-          }
-        })
-      })
-    }
-
-    ['bufferedAmount', 'url', 'readyState', 'protocol', 'extensions'].forEach(function(readOnlyProp) {
+    ;['bufferedAmount', 'url', 'readyState', 'protocol', 'extensions'].forEach(function(readOnlyProp) {
       Object.defineProperty(self, readOnlyProp, {
         get: function() { return realWs[readOnlyProp] }
       })
@@ -52,11 +23,67 @@
       }
     })
 
-    realWs = newWebSocket()
+    function onclose(event) {
+      if (event.code === 1000) return
+    }
+
+    Object.defineProperty(self, 'listeners', {
+      value: {
+        close: [onclose]
+      }
+    })
+
+    function newWebSocket() {
+      realWs = new WebSocket(url)
+      realWs.binaryType = self.binaryType
+
+      ;['open', 'close', 'message', 'error'].forEach(function(stdEvent) {
+        realWs.addEventListener(stdEvent, function(evt) {
+          self.dispatchEvent(evt)
+
+          var cb = self['on' + stdEvent]
+          if (typeof cb === 'function') {
+            return cb.apply(self, arguments)
+          }
+        })
+      })
+    }
+
+    newWebSocket()
   }
 
-  inherit(RobustWebsocket, EventTarget)
+  RobustWebSocket.prototype.binaryType = 'blob'
 
-  RobustWebsocket.prototype.binaryType = 'blob'
+  // Taken from MDN https://developer.mozilla.org/en-US/docs/Web/API/EventTarget
+  RobustWebSocket.prototype.addEventListener = function(type, callback) {
+    if (!(type in this.listeners)) {
+      this.listeners[type] = []
+    }
+    this.listeners[type].push(callback)
+  }
 
+  RobustWebSocket.prototype.removeEventListener = function(type, callback) {
+    if (!(type in this.listeners)) {
+      return
+    }
+    var stack = this.listeners[type]
+    for (var i = 0, l = stack.length; i < l; i++) {
+      if (stack[i] === callback) {
+        stack.splice(i, 1)
+        return
+      }
+    }
+  }
+
+  RobustWebSocket.prototype.dispatchEvent = function(event) {
+    if (!(event.type in this.listeners)) {
+      return
+    }
+    var stack = this.listeners[event.type]
+    for (var i = 0, l = stack.length; i < l; i++) {
+      stack[i].call(this, event)
+    }
+  }
+
+  return RobustWebSocket
 }, typeof window !== 'undefined' ? window : this)

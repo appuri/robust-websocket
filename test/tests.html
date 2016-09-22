@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>RobustWebSocket Tests</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" href="../node_modules/mocha/mocha.css">
+</head>
+<body>
+  <script src="../node_modules/mocha/mocha.js"></script>
+  <script src="../node_modules/chai/chai.js"></script>
+  <script src="../node_modules/sinon-browser-only/sinon.js"></script>
+  <script src="../node_modules/sinon-chai/lib/sinon-chai.js"></script>
+
+  <div id="mocha"></div>
+
+  <script>
+    mocha.ui('bdd')
+    var should = chai.should()
+    chai.config.includeStack = true
+  </script>
+
+  <script src="../robust-websocket.js"></script>
+  <script src="tests.js"></script>
+
+  <script>
+    window.onload = function() {
+      var runner = mocha.run(),
+          tests = []
+      runner.on('end', function() {
+        window.global_test_results = {
+          passed: runner.stats.passes,
+          failed: runner.stats.failures,
+          total: runner.stats.tests,
+          duration: runner.stats.duration,
+          tests: tests
+        }
+      })
+
+      runner.on('pass', function(test) {
+        tests.push({
+          name: test.fullTitle(),
+          result: true,
+          message: test.duration + 'ms'
+        })
+      })
+
+      runner.on('fail', function (test, err) {
+        tests.push({
+          name: test.fullTitle(),
+          result: false,
+          duration: test.duration,
+          message: (err.message || '<no message>') + ': ' + err.stack
+        })
+      })
+    }
+  </script>
+</body>
+</html>

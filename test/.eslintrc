@@ -1,0 +1,18 @@
+{
+  "env": {
+    "mocha": true,
+  },
+  "globals": {
+    "chai": true,
+    "ko": true,
+    "moment": true,
+    "pollUntilPassing": true,
+    "querystring": true,
+    "retry": true,
+    "Scenario": true,
+    "scenario": true,
+    "should": true,
+    "sinon": true,
+    "testEl": true
+  }
+}

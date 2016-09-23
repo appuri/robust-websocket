@@ -1,10 +1,14 @@
 const
   url = require('url'),
   qs = require('qs'),
-  WebSocketServer = require('ws').Server,
-  wss = new WebSocketServer({
+  ws = require('ws'),
+  ErrorCodes = require(require.resolve('ws').replace('index.js', 'lib/ErrorCodes')),
+  wss = new ws.Server({
     port: Number(process.env.WS_PORT || 11099)
   })
+
+// stub this out so we can do more through testing on the client side
+ErrorCodes.isValidErrorCode = () => true
 
 wss.on('connection', function (ws) {
   var path = url.parse(ws.upgradeReq.url),
@@ -22,7 +26,8 @@ wss.on('connection', function (ws) {
 
   if (query.exitCode) {
     setTimeout(function() {
+      console.log('closing connection with code %d, message %s', query.exitCode, query.exitMessage)
       ws.close(Number(query.exitCode), query.exitMessage)
-    }, query.delay || 20)
+    }, query.delay || 500)
   }
 })

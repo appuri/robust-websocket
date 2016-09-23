@@ -8,8 +8,25 @@
   }
 })(function() {
 
-  var RobustWebSocket = function(url, opts) {
-    var realWs, self = this
+  var RobustWebSocket = function(url, protocols, userOptions) {
+    var realWs, connectTimeout,
+        self = this,
+        attempts = 0,
+        reconnects = -1,
+        opts = Object.assign({
+          timeout: 4000,
+          reconnectStrategy: function(ws) {
+            return [0, 3000, 10000][ws.attempts]
+          }
+        }, userOptions)
+
+    if (typeof opts.timeout !== 'number') {
+      throw new Error('timeout must be the number of milliseconds to timeout a connection attempt')
+    }
+
+    if (typeof opts.reconnectStrategy !== 'function') {
+      throw new Error('reconnectStrategy must be a function that returns the number of milliseconds to wait for a reconnect attempt, or null or undefined to not reconnect.')
+    }
 
     ;['bufferedAmount', 'url', 'readyState', 'protocol', 'extensions'].forEach(function(readOnlyProp) {
       Object.defineProperty(self, readOnlyProp, {
@@ -25,21 +42,63 @@
 
     function onclose(event) {
       if (event.code === 1000) return
+
+      var delay = opts.reconnectStrategy(self, event)
+      if (typeof delay === 'number') {
+        setTimeout(newWebSocket, delay)
+      }
     }
 
     Object.defineProperty(self, 'listeners', {
       value: {
-        close: [onclose]
+        open: [function(event) {
+          if (connectTimeout) {
+            clearTimeout(connectTimeout)
+            connectTimeout = null
+          }
+          event.reconnects = ++reconnects
+          event.attempts = attempts
+          attempts = 0
+        }],
+        close: [onclose],
+        error: [function(e) {
+          console.log('error (reconnects %d, attempts %d)', reconnects, attempts)
+          console.dir(e)
+        }]
       }
     })
 
+    Object.defineProperty(self, 'attempts', {
+      get: function() { return attempts },
+      enumerable: true
+    })
+
+    Object.defineProperty(self, 'reconnects', {
+      get: function() { return reconnects },
+      enumerable: true
+    })
+
     function newWebSocket() {
-      realWs = new WebSocket(url)
+      realWs = new WebSocket(url, protocols)
       realWs.binaryType = self.binaryType
 
+      attempts++
+      self.dispatchEvent(new CustomEvent('connecting', {
+        attempts: attempts,
+        reconnects: reconnects
+      }))
+
+      connectTimeout = setTimeout(function() {
+        connectTimeout = null
+        self.dispatchEvent(new CustomEvent('timeout', {
+          attempts: attempts,
+          reconnects: reconnects
+        }))
+      }, opts.timeout)
+
       ;['open', 'close', 'message', 'error'].forEach(function(stdEvent) {
-        realWs.addEventListener(stdEvent, function(evt) {
-          self.dispatchEvent(evt)
+        realWs.addEventListener(stdEvent, function(event) {
+          self.dispatchEvent(event)
 
           var cb = self['on' + stdEvent]
           if (typeof cb === 'function') {
@@ -79,6 +138,7 @@
     if (!(event.type in this.listeners)) {
       return
     }
+    event.currentTarget = this
     var stack = this.listeners[event.type]
     for (var i = 0, l = stack.length; i < l; i++) {
       stack[i].call(this, event)
@@ -86,4 +146,4 @@
   }
 
   return RobustWebSocket
-}, typeof window !== 'undefined' ? window : this)
+}, this)

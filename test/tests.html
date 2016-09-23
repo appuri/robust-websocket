@@ -16,6 +16,7 @@
 
   <script>
     mocha.ui('bdd')
+    mocha.timeout(4000)
     var should = chai.should()
     chai.config.includeStack = true
   </script>
@@ -24,6 +25,40 @@
   <script src="tests.js"></script>
 
   <script>
+    var pollUntilPassing = function(fn) {
+      var resolve, reject, tries = 0
+
+      var attempt = function() {
+        tries++
+        try {
+          fn()
+          resolve()
+        } catch(e) {
+          if (tries < 100) {
+            setTimeout(attempt, 10)
+          } else {
+            reject(e)
+          }
+        }
+      }
+      setTimeout(attempt, 10)
+
+      return new Promise(function(r, rj) {
+        resolve = r, reject = rj
+      })
+    }
+
+    Promise.delay = function(ms) {
+      var resolve
+      setTimeout(function() {
+        resolve()
+      }, ms || 10)
+
+      return new Promise(function(r) {
+        resolve = r
+      })
+    }
+
     window.onload = function() {
       var runner = mocha.run(),
           tests = []

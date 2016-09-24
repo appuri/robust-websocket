@@ -1,51 +1,68 @@
 (function(factory, global) {
   if (typeof define === 'function' && define.amd) {
-    define(factory)
+    define(function() {
+      return factory(global, navigator)
+    })
   } else if (typeof exports === 'object' && typeof module === 'object') {
-    module.exports = factory()
+    module.exports = factory(global, navigator)
   } else {
-    global.RobustWebSocket = factory()
+    // mock the navigator object when under test since `navigator.onLine` is read only
+    global.RobustWebSocket = factory(global, typeof Mocha !== 'undefined' ? Mocha : navigator)
   }
-})(function() {
+})(function(global, navigator) {
 
   var RobustWebSocket = function(url, protocols, userOptions) {
-    var realWs, connectTimeout,
+    var realWs = {}, connectTimeout,
         self = this,
         attempts = 0,
         reconnects = -1,
-        opts = Object.assign({
-          timeout: 4000,
-          reconnectStrategy: function(ws) {
-            return [0, 3000, 10000][ws.attempts]
-          }
-        }, userOptions)
+        reconnectWhenOnlineAgain = false,
+        pendingReconnect,
+        opts = Object.assign({},
+          RobustWebSocket.defaultOptions,
+          typeof userOptions === 'function' ? { shouldReconnect: userOptions } : userOptions
+        )
 
     if (typeof opts.timeout !== 'number') {
       throw new Error('timeout must be the number of milliseconds to timeout a connection attempt')
     }
 
-    if (typeof opts.reconnectStrategy !== 'function') {
-      throw new Error('reconnectStrategy must be a function that returns the number of milliseconds to wait for a reconnect attempt, or null or undefined to not reconnect.')
+    if (typeof opts.shouldReconnect !== 'function') {
+      throw new Error('shouldReconnect must be a function that returns the number of milliseconds to wait for a reconnect attempt, or null or undefined to not reconnect.')
     }
 
-    ;['bufferedAmount', 'url', 'readyState', 'protocol', 'extensions'].forEach(function(readOnlyProp) {
+    ['bufferedAmount', 'url', 'readyState', 'protocol', 'extensions'].forEach(function(readOnlyProp) {
       Object.defineProperty(self, readOnlyProp, {
         get: function() { return realWs[readOnlyProp] }
       })
     })
 
-    ;['send', 'close'].forEach(function(method) {
-      self[method] = function() {
-        return realWs[method].apply(realWs, arguments)
+    self.send = function() {
+      return realWs.send.apply(realWs, arguments)
+    }
+
+    self.close = function() {
+      if (pendingReconnect) {
+        pendingReconnect = null
+        clearTimeout(pendingReconnect)
       }
-    })
+      reconnectWhenOnlineAgain = false
+      return realWs.close.apply(realWs, arguments)
+    }
 
-    function onclose(event) {
-      if (event.code === 1000) return
+    function reconnect(event) {
+      if (event.code === 1000) {
+        attempts = 0
+        return
+      }
+      if (navigator.onLine === false) {
+        reconnectWhenOnlineAgain = true
+        return
+      }
 
-      var delay = opts.reconnectStrategy(self, event)
+      var delay = opts.shouldReconnect(event, self)
       if (typeof delay === 'number') {
-        setTimeout(newWebSocket, delay)
+        pendingReconnect = setTimeout(newWebSocket, delay)
       }
     }
 
@@ -59,12 +76,9 @@
           event.reconnects = ++reconnects
           event.attempts = attempts
           attempts = 0
+          reconnectWhenOnlineAgain = false
         }],
-        close: [onclose],
-        error: [function(e) {
-          console.log('error (reconnects %d, attempts %d)', reconnects, attempts)
-          console.dir(e)
-        }]
+        close: [reconnect]
       }
     })
 
@@ -79,18 +93,19 @@
     })
 
     function newWebSocket() {
+      pendingReconnect = null
       realWs = new WebSocket(url, protocols)
       realWs.binaryType = self.binaryType
 
       attempts++
-      self.dispatchEvent(new CustomEvent('connecting', {
+      self.dispatchEvent(Object.assign(new CustomEvent('connecting'), {
         attempts: attempts,
         reconnects: reconnects
       }))
 
       connectTimeout = setTimeout(function() {
         connectTimeout = null
-        self.dispatchEvent(new CustomEvent('timeout', {
+        self.dispatchEvent(Object.assign(new CustomEvent('connecting'), {
           attempts: attempts,
           reconnects: reconnects
         }))
@@ -109,6 +124,25 @@
     }
 
     newWebSocket()
+
+    global.addEventListener('online', function(event) {
+      if (reconnectWhenOnlineAgain && !pendingReconnect) {
+        reconnect(event)
+      }
+    })
+  }
+
+  RobustWebSocket.defaultOptions = {
+    // the time to wait before a successful connection
+    // before the attempt is considered to have timed out
+    timeout: 4000,
+    // Given a CloseEvent or OnlineEvent and the RobustWebSocket state,
+    // should a reconnect be attempted? Return the number of milliseconds to wait
+    // to reconnect, rather than true or false
+    shouldReconnect: function(event, ws) {
+      if (event.code === 1008 || event.code === 1011) return
+      return [0, 3000, 10000][ws.attempts]
+    }
   }
 
   RobustWebSocket.prototype.binaryType = 'blob'

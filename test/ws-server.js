@@ -28,6 +28,6 @@ wss.on('connection', function (ws) {
     setTimeout(function() {
       console.log('closing connection with code %d, message %s', query.exitCode, query.exitMessage)
       ws.close(Number(query.exitCode), query.exitMessage)
-    }, query.delay || 500)
+    }, Number(query.delay || 500))
   }
 })

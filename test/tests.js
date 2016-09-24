@@ -1,6 +1,7 @@
 describe('RobustWebSocket', function() {
   var ws, serverUrl = 'ws://localhost:11099'
   afterEach(function() {
+    Mocha.onLine = true
     try {
       if (ws) {
         ws.listeners.length = 0
@@ -97,25 +98,11 @@ describe('RobustWebSocket', function() {
     it('should support the protocols parameter')
   })
 
-  describe('robustness', function() {
-    it('should reconnect when a server reboots (1011)', function() {
-      ws = new RobustWebSocket(serverUrl + '/?exitCode=1011&exitMessage=alldone')
+  function shouldNotReconnect(code) {
+    return function() {
+      ws = new RobustWebSocket(serverUrl + '/?exitCode=' + code + '&exitMessage=alldone')
       ws.onclose = sinon.spy(function(evt) {
-        evt.code.should.equal(1011)
-        evt.reason.should.equal('alldone')
-      })
-      ws.onopen = sinon.spy()
-
-      return pollUntilPassing(function() {
-        ws.onopen.callCount.should.be.greaterThan(2)
-        ws.onclose.callCount.should.be.greaterThan(1)
-      })
-    })
-
-    it('should not reconnect on normal disconnects (1000)', function() {
-      ws = new RobustWebSocket(serverUrl + '/?exitCode=1000&exitMessage=alldone')
-      ws.onclose = sinon.spy(function(evt) {
-        evt.code.should.equal(1000)
+        evt.code.should.equal(code)
         evt.reason.should.equal('alldone')
       })
       ws.onopen = sinon.spy()
@@ -131,12 +118,133 @@ describe('RobustWebSocket', function() {
         ws.onopen.should.have.been.calledOnce
         ws.readyState.should.equal(WebSocket.CLOSED)
       })
+    }
+  }
+
+  describe('robustness', function() {
+    it('should reconnect when a server reboots (1012)', function() {
+      ws = new RobustWebSocket(serverUrl + '/?exitCode=1012&exitMessage=alldone')
+      ws.onclose = sinon.spy(function(evt) {
+        evt.code.should.equal(1012)
+        evt.reason.should.equal('alldone')
+      })
+      ws.onopen = sinon.spy()
+
+      return pollUntilPassing(function() {
+        ws.onopen.callCount.should.be.greaterThan(2)
+        ws.onclose.callCount.should.be.greaterThan(1)
+      })
     })
 
-    it('should emit connecting events when reconnecting (1001)')
-    it('should retry the initial connection if it failed')
-    it('should not try to disconnect while offline, trying again when online')
-    it('should try to reconnect with an exponential backoff')
-    it('should allow a reconnect delay to be configured')
+    it('should not reconnect on normal disconnects (1000)', shouldNotReconnect(1000))
+    it('should not reconnect 1008 by default (HTTP 400 equvalent)', shouldNotReconnect(1008))
+    it('should not reconnect 1011 by default (HTTP 500 equvalent)', shouldNotReconnect(1011))
+
+    it('should emit connecting events when reconnecting (1001)', function() {
+      ws = new RobustWebSocket(serverUrl + '/?exitCode=1001')
+      ws.onclose = sinon.spy(function(evt) {
+        evt.code.should.equal(1001)
+        evt.reason.should.equal('')
+      })
+
+      var reconnectingListener = sinon.spy()
+      ws.addEventListener('connecting', reconnectingListener)
+
+      return pollUntilPassing(function() {
+        reconnectingListener.should.have.been.called
+        var event = reconnectingListener.lastCall.args[0]
+        event.type.should.equal('connecting')
+        event.attempts.should.equal(1)
+      })
+    })
+
+    it('should retry the initial connection if it failed', function() {
+      var attemptLog = [],
+      shouldReconnect = sinon.spy(function(event, ws) {
+        event.type.should.equal('close')
+        event.currentTarget.should.be.instanceof(WebSocket)
+        // since ws.attempts refers to the current attempts on the websocket, we need to save them
+        // rather than use sinon.firstCall.args[0].attempts
+        attemptLog.push(ws.attempts)
+        return ws.attempts < 3 && 500
+      })
+
+      ws = new RobustWebSocket('ws://localhost:88', null, {
+        shouldReconnect: shouldReconnect
+      })
+      ws.onclose = sinon.spy(function(evt) {
+        evt.code.should.equal(1006)
+        evt.reason.should.equal('')
+      })
+      ws.onerror = sinon.spy(function(e) {
+        e.type.should.equal('error')
+      })
+
+      return pollUntilPassing(function() {
+        ws.onerror.should.have.been.calledThrice
+        ws.onclose.should.have.been.calledThrice
+        shouldReconnect.should.have.been.calledThrice
+        ws.readyState.should.equal(WebSocket.CLOSED)
+
+        attemptLog.should.deep.equal([1, 2, 3])
+      }).then(function() {
+        return Promise.delay(1500)
+      }).then(function() {
+        ws.onclose.should.have.been.calledThrice
+        ws.readyState.should.equal(WebSocket.CLOSED)
+      })
+    })
+
+    it('should not try to reconnect while offline, trying again when online', function() {
+      Mocha.onLine = false
+      var shouldReconnect = sinon.spy(function() { return 0 })
+
+      ws = new RobustWebSocket(serverUrl + '/?exitCode=1002&delay=500', null, shouldReconnect)
+      ws.onopen = sinon.spy()
+
+      return pollUntilPassing(function() {
+        ws.onopen.should.have.been.calledOnce
+        shouldReconnect.should.have.not.been.called
+      }).then(function() {
+        return Promise.delay(1000)
+      }).then(function() {
+        ws.onopen.should.have.been.calledOnce
+        shouldReconnect.should.have.not.been.called
+
+        Mocha.onLine = true
+        window.dispatchEvent(new CustomEvent('online'))
+
+        return pollUntilPassing(function() {
+          shouldReconnect.should.have.been.calledOnce
+          ws.onopen.should.have.been.calledTwice
+        })
+      })
+    })
+
+    it('should not reconnect a websocket that was explicitly closed when going back online', function() {
+      ws = new RobustWebSocket(serverUrl + '/echo', null, function() { return 0 })
+      ws.onopen = sinon.spy()
+      ws.onclose = sinon.spy()
+
+      return pollUntilPassing(function() {
+        ws.readyState.should.equal(WebSocket.OPEN)
+      }).then(function() {
+        Mocha.onLine = false
+        ws.close()
+
+        return pollUntilPassing(function() {
+          ws.readyState.should.equal(WebSocket.CLOSED)
+          ws.onclose.should.have.been.calledOnce
+        })
+      }).then(function() {
+        return Promise.delay(300)
+      }).then(function() {
+        window.dispatchEvent(new CustomEvent('online'))
+        return Promise.delay(500)
+      }).then(function() {
+        ws.onclose.should.have.been.calledOnce
+        ws.onclose.should.have.been.calledOnce
+      })
+    })
   })
 })

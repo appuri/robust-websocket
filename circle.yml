@@ -2,4 +2,4 @@ machine:
   node:
     version: 6
   environment:
-    SAUCE_USERNAME: nathan-appuri
+    SAUCE_USERNAME: robustwebsocket

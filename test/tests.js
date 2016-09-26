@@ -196,6 +196,7 @@ describe('RobustWebSocket', function() {
     })
 
     it('should not try to reconnect while offline, trying again when online', function() {
+      this.timeout(8000)
       Mocha.onLine = false
       var shouldReconnect = sinon.spy(function() { return 0 })
 

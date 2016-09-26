@@ -11,9 +11,9 @@ module.exports = function(grunt) {
     'saucelabs-custom': {
       all: {
         options: {
-          urls: ['http://127.0.0.1:9999/tests/tests.html'],
+          urls: ['http://127.0.0.1:9999/test/tests.html'],
           tunnelTimeout: 5,
-          build: process.env.CIRCLE_BUILD_NUM || 0,
+          build: process.env.CIRCLE_SHA1 || 0,
           concurrency: 3,
           browsers: [{
             browserName: 'iphone',

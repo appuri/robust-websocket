@@ -85,12 +85,12 @@ describe('RobustWebSocket', function() {
     it('should rethrow errors', function() {
       (function() {
         new RobustWebSocket('localhost:11099')
-      }).should.throw('The URL\'s scheme must be either \'ws\' or \'wss\'.')
+      }).should.throw(Error)
 
       ;(function() {
         ws = new RobustWebSocket(serverUrl)
         ws.send()
-      }).should.throw('Failed to execute \'send\' on \'WebSocket\': 1 argument required, but only 0 present.')
+      }).should.throw(Error)
     })
 
     it('should work in a web worker')
@@ -123,7 +123,7 @@ describe('RobustWebSocket', function() {
 
   describe('robustness', function() {
     it('should reconnect when a server reboots (1012)', function() {
-      ws = new RobustWebSocket(serverUrl + '/?exitCode=1012&exitMessage=alldone')
+      ws = new RobustWebSocket(serverUrl + '/?exitCode=1012&exitMessage=alldone&delay=250')
       ws.onclose = sinon.spy(function(evt) {
         evt.code.should.equal(1012)
         evt.reason.should.equal('alldone')

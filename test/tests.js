@@ -1,6 +1,8 @@
 describe('RobustWebSocket', function() {
   var ws, serverUrl = location.origin.replace('http', 'ws'),
-      isSafari = window.webkitCancelAnimationFrame && !window.webkitRTCPeerConnection
+      isSafari = window.webkitCancelAnimationFrame && !window.webkitRTCPeerConnection,
+      isIE = Object.hasOwnProperty.call(window, 'ActiveXObject')
+
   afterEach(function() {
     Mocha.onLine = true
     try {
@@ -83,7 +85,7 @@ describe('RobustWebSocket', function() {
       })
     })
 
-    it('should rethrow errors', function() {
+    it('should rethrow errors', !isIE && function() {
       (function() {
         new RobustWebSocket('localhost:11099')
       }).should.throw(Error)
@@ -103,7 +105,7 @@ describe('RobustWebSocket', function() {
     return function() {
       ws = new RobustWebSocket(serverUrl + '/?exitCode=' + code + '&exitMessage=alldone')
       ws.onclose = sinon.spy(function(evt) {
-        evt.code.should.equal(code)
+        !isIE && evt.code.should.equal(code)
         evt.reason.should.equal('alldone')
       })
       ws.onopen = sinon.spy()
@@ -126,7 +128,7 @@ describe('RobustWebSocket', function() {
     it('should reconnect when a server reboots (1012)', function() {
       ws = new RobustWebSocket(serverUrl + '/?exitCode=1012&exitMessage=alldone&delay=250')
       ws.onclose = sinon.spy(function(evt) {
-        evt.code.should.equal(1012)
+        !isIE && evt.code.should.equal(1012)
         evt.reason.should.equal('alldone')
       })
       ws.onopen = sinon.spy()

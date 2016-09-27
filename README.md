@@ -13,6 +13,7 @@ It is error-code aware and will not reconnect on 1008 (HTTP 400 equivalent) and 
 - Tests! You know it works like stated and regressions will be caught.
 - Is aware of online and offline, and won't burn up the users battery and CPU reconnected when offline, and will reconnect when it is online again.
 - Natively aware of error codes
+- Any kind of reconnect strategy is possible via functional composition
 
 ### Usage
 
@@ -35,8 +36,31 @@ The number of milliseconds to wait before a connection is considered to have tim
 
 #### `shouldReconnect`
 
-A funtion that given a [CloseEvent]() or [online event](https://developer.mozilla.org/en-US/docs/Online_and_offline_events)
+A function that given a [CloseEvent]() or [online event](https://developer.mozilla.org/en-US/docs/Online_and_offline_events) and the `RobustWebSocket` will return the number of milliseconds to wait to reconnect, or a non-Number to not reconnect.
 
+Examples:
+
+Reconnect with an exponetial backoff on all errors
+```javascript
+function shouldReconnect(event, ws) {
+  return Math.pow(1.5, ws.attempts) * 500
+}
+```
+
+Reconnect immediately but only 20 times per RobustWebSocket instance
+```javascript
+function shouldReconnect(event, ws) {
+  return ws.reconnects <= 20 && 0
+}
+```
+
+Reconnect only on some whitelisted codes, and only 3 attempts, except on online events, then connect immediately
+```javascript
+function shouldReconnect(event, ws) {
+  if (event.type === 'online') return 0
+  return [1006,1011,1012].indexOf(event.code) && [1000,5000,10000][ws.attempt]
+}
+```
 
 ### Polyfills needed
 

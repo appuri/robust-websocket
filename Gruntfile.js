@@ -76,13 +76,16 @@ module.exports = function(grunt) {
             browserName: 'firefox',
             platform: 'linux'
           }, {
+            browserName: 'microsoftedge',
+            platform: 'win10'
+          }, {
             browserName: 'internet explorer',
             version: '11'
-          }, {
+          }/*, {
             browserName: 'internet explorer',
             platform: 'WIN7',
             version: '10'
-          }],
+          }*/],
           testname: 'RobustWebSocket tests',
           tags: [process.env.CIRCLE_BRANCH || 'local']
         }

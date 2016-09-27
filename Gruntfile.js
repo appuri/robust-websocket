@@ -14,6 +14,7 @@ module.exports = function(grunt) {
         options: {
           base: '',
           port: 9999,
+          keepalive: !!process.env.KEEPALIVE,
           onCreateServer: function(server/*, connect, options*/) {
             const wss = new ws.Server({ server })
             wss.on('connection', function (socket) {

@@ -1,5 +1,6 @@
 describe('RobustWebSocket', function() {
-  var ws, serverUrl = location.origin.replace('http', 'ws')
+  var ws, serverUrl = location.origin.replace('http', 'ws'),
+      isSafari = window.webkitCancelAnimationFrame && !window.webkitRTCPeerConnection
   afterEach(function() {
     Mocha.onLine = true
     try {
@@ -72,7 +73,7 @@ describe('RobustWebSocket', function() {
 
     it('should proxy read only properties', function() {
       ws = new RobustWebSocket(serverUrl)
-      ws.url.should.equal(serverUrl + '/')
+      ws.url.should.startWith(serverUrl)
       ws.protocol.should.equal('')
       ws.readyState.should.equal(WebSocket.CONNECTING)
       ws.bufferedAmount.should.equal(0)
@@ -158,7 +159,8 @@ describe('RobustWebSocket', function() {
       })
     })
 
-    it('should retry the initial connection if it failed', function() {
+    // Safari never calls the onerror callback. The connection will just timeout in that case.
+    it('should retry the initial connection if it failed', !isSafari && function() {
       var attemptLog = [],
       shouldReconnect = sinon.spy(function(event, ws) {
         event.type.should.equal('close')

@@ -73,7 +73,7 @@ describe('RobustWebSocket', function() {
 
     it('should proxy read only properties', function() {
       ws = new RobustWebSocket(serverUrl)
-      ws.url.should.startWith(serverUrl)
+      ws.url.should.contain(serverUrl)
       ws.protocol.should.equal('')
       ws.readyState.should.equal(WebSocket.CONNECTING)
       ws.bufferedAmount.should.equal(0)

@@ -11,6 +11,7 @@
   <script src="../node_modules/chai/chai.js"></script>
   <script src="../node_modules/sinon-browser-only/sinon.js"></script>
   <script src="../node_modules/sinon-chai/lib/sinon-chai.js"></script>
+  <script src="../node_modules/bluebird/js/browser/bluebird.js"></script>
 
   <div id="mocha"></div>
 
@@ -45,17 +46,6 @@
 
       return new Promise(function(r, rj) {
         resolve = r, reject = rj
-      })
-    }
-
-    Promise.delay = function(ms) {
-      var resolve
-      setTimeout(function() {
-        resolve()
-      }, ms || 10)
-
-      return new Promise(function(r) {
-        resolve = r
       })
     }
 

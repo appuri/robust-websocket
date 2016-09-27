@@ -74,14 +74,13 @@ module.exports = function(grunt) {
             platform: 'linux'
           }, {
             browserName: 'firefox',
-            platform: 'WIN7'
+            platform: 'linux'
           }, {
             browserName: 'internet explorer',
-            platform: 'WIN8.1',
             version: '11'
           }, {
             browserName: 'internet explorer',
-            platform: 'WIN8',
+            platform: 'WIN7',
             version: '10'
           }],
           testname: 'RobustWebSocket tests',

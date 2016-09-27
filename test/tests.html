@@ -35,7 +35,7 @@
           fn()
           resolve()
         } catch(e) {
-          if (tries < 200) {
+          if (tries < 250) {
             setTimeout(attempt, 10)
           } else {
             reject(e)
@@ -75,6 +75,22 @@
       })();
     }
 
+    if (!window.CustomEvent) {
+      function CustomEvent(event, params) {
+        params = params || {
+            bubbles: false,
+            cancelable: false,
+            detail: undefined
+        }
+        var evt = document.createEvent('CustomEvent')
+        evt.initCustomEvent(event, params.bubbles, params.cancelable, params.detail)
+        return evt
+      }
+
+      CustomEvent.prototype = window.Event.prototype
+
+      window.CustomEvent = CustomEvent
+    }
 
     window.onload = function() {
       var runner = mocha.run(),

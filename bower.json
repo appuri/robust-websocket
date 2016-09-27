@@ -1,0 +1,30 @@
+{
+  "name": "robust-websocket",
+  "main": "robust-websocket.js",
+  "homepage": "https://github.com/appuri/robust-websocket",
+  "authors": [
+    "Appuri, Inc <info@appuri.com>"
+  ],
+  "description": "A robust reconnecting WebSocket client for the browser",
+  "moduleType": [
+    "amd",
+    "globals",
+    "node"
+  ],
+  "keywords": [
+    "websocket",
+    "browser",
+    "client",
+    "websocket-client",
+    "reconnecting",
+    "retrying"
+  ],
+  "license": "ISC",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "Gruntfile.js",
+    "bower_components",
+    "test"
+  ]
+}

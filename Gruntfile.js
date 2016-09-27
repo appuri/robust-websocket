@@ -53,11 +53,11 @@ module.exports = function(grunt) {
           browsers: [{
             browserName: 'iphone',
             platform: 'OS X 10.10',
-            version: '7.1'
+            version: '9.3'
           }, {
             browserName: 'iphone',
             platform: 'OS X 10.10',
-            version: '8.2'
+            version: '8.4'
           }, {
             browserName: 'safari',
             platform: 'OS X 10.11',
@@ -68,13 +68,13 @@ module.exports = function(grunt) {
           }, {
             browserName: 'android',
             platform: 'Linux',
-            version: '4.0'
+            version: '5.0'
           }, {
             browserName: 'googlechrome',
             platform: 'linux'
           }, {
             browserName: 'firefox',
-            platform: 'WIN7',
+            platform: 'WIN7'
           }, {
             browserName: 'internet explorer',
             platform: 'WIN8.1',

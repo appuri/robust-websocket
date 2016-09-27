@@ -34,7 +34,7 @@
           fn()
           resolve()
         } catch(e) {
-          if (tries < 100) {
+          if (tries < 200) {
             setTimeout(attempt, 10)
           } else {
             reject(e)

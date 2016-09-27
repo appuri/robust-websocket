@@ -1,5 +1,5 @@
 describe('RobustWebSocket', function() {
-  var ws, serverUrl = 'ws://localhost:11099'
+  var ws, serverUrl = location.origin.replace('http', 'ws')
   afterEach(function() {
     Mocha.onLine = true
     try {

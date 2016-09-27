@@ -138,7 +138,7 @@
     timeout: 4000,
     // Given a CloseEvent or OnlineEvent and the RobustWebSocket state,
     // should a reconnect be attempted? Return the number of milliseconds to wait
-    // to reconnect, rather than true or false
+    // to reconnect (or null or undefined to not), rather than true or false
     shouldReconnect: function(event, ws) {
       if (event.code === 1008 || event.code === 1011) return
       return [0, 3000, 10000][ws.attempts]

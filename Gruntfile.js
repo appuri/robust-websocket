@@ -1,10 +1,43 @@
 module.exports = function(grunt) {
+  const
+    url = require('url'),
+    qs = require('qs'),
+    ws = require('ws'),
+    ErrorCodes = require(require.resolve('ws').replace('index.js', 'lib/ErrorCodes'))
+
+  // stub this out so we can do more through testing on the client side
+  ErrorCodes.isValidErrorCode = () => true
+
   grunt.initConfig({
     connect: {
       server: {
         options: {
           base: '',
-          port: 9999
+          port: 9999,
+          onCreateServer: function(server/*, connect, options*/) {
+            const wss = new ws.Server({ server })
+            wss.on('connection', function (socket) {
+              var path = url.parse(socket.upgradeReq.url),
+                  query = qs.parse(path.query)
+
+              socket.on('message', function (message) {
+                if (path.pathname.startsWith('/echo')) {
+                  socket.send(message)
+                }
+              })
+
+              if (query.greet) {
+                socket.send(query.greet)
+              }
+
+              if (query.exitCode) {
+                setTimeout(function() {
+                  console.log('closing connection with code %d, message %s', query.exitCode, query.exitMessage)
+                  socket.close(Number(query.exitCode), query.exitMessage)
+                }, Number(query.delay || 500))
+              }
+            })
+          }
         }
       }
     },
@@ -15,6 +48,7 @@ module.exports = function(grunt) {
           tunnelTimeout: 5,
           build: process.env.CIRCLE_SHA1 || 0,
           concurrency: 3,
+          tunnelArgs: ['--vm-version', 'dev-varnish'],
           browsers: [{
             browserName: 'iphone',
             platform: 'OS X 10.10',

@@ -3,3 +3,8 @@ machine:
     version: 6
   environment:
     SAUCE_USERNAME: robustwebsocket
+
+dependencies:
+  pre:
+    - node test/ws-server.js:
+        background: true

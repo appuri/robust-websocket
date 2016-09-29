@@ -130,6 +130,11 @@
         reconnect(event)
       }
     })
+
+    global.addEventListener('offline', function() {
+      self.close()
+      reconnectWhenOnlineAgain = true
+    })
   }
 
   RobustWebSocket.defaultOptions = {

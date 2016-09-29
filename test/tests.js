@@ -199,6 +199,8 @@ describe('RobustWebSocket', function() {
       })
     })
 
+    it('should emit a timeout event if the connection timed out')
+
     it('should not try to reconnect while offline, trying again when online', function() {
       this.timeout(8000)
       Mocha.onLine = false
@@ -223,6 +225,45 @@ describe('RobustWebSocket', function() {
           shouldReconnect.should.have.been.calledOnce
           ws.onopen.should.have.been.calledTwice
         })
+      })
+    })
+
+    it('should immediately close the websocket when going offline rather than waiting for a timeout', function() {
+      this.timeout(8000)
+      var shouldReconnect = sinon.spy(function() { return 0 })
+
+      ws = new RobustWebSocket(serverUrl + '/echo', null, shouldReconnect)
+      ws.onopen = sinon.spy()
+      ws.onclose = sinon.spy()
+
+      return pollUntilPassing(function() {
+        ws.onopen.should.have.been.calledOnce
+        shouldReconnect.should.have.not.been.called
+      }).then(function() {
+        return Promise.delay(100)
+      }).then(function() {
+        window.dispatchEvent(new CustomEvent('offline'))
+        return pollUntilPassing(function() {
+          ws.onclose.should.have.been.calledOnce
+          ws.readyState.should.equal(WebSocket.CLOSED)
+        })
+      }).then(function() {
+        return Promise.delay(1000)
+      }).then(function() {
+        ws.onclose.should.have.been.calledOnce
+        ws.readyState.should.equal(WebSocket.CLOSED)
+
+        window.dispatchEvent(new CustomEvent('online'))
+        return pollUntilPassing(function() {
+          ws.onopen.should.have.been.calledTwice
+          shouldReconnect.should.have.been.calledOnce
+        })
+      }).then(function() {
+        return Promise.delay(1000)
+      }).then(function() {
+        ws.onopen.should.have.been.calledTwice
+        shouldReconnect.should.have.been.calledOnce
+        ws.readyState.should.equal(WebSocket.OPEN)
       })
     })
 

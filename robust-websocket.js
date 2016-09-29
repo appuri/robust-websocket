@@ -37,17 +37,55 @@
       })
     })
 
+    var ononline = function(event) {
+      if (reconnectWhenOnlineAgain && !pendingReconnect) {
+        reconnect(event)
+      }
+    },
+    onoffline = function() {
+      if (pendingReconnect) {
+        pendingReconnect = null
+        clearTimeout(pendingReconnect)
+      }
+      reconnectWhenOnlineAgain = true
+      realWs.close(1000)
+    },
+    connectivityEventsAttached = false
+
+    function detachConnectivityEvents() {
+      if (connectivityEventsAttached) {
+        global.removeEventListener('online', ononline)
+        global.removeEventListener('offline', onoffline)
+        connectivityEventsAttached = false
+      }
+    }
+
+    function attachConnectivityEvents() {
+      if (!connectivityEventsAttached) {
+        global.addEventListener('online', ononline)
+        global.addEventListener('offline', onoffline)
+        connectivityEventsAttached = true
+      }
+    }
+
     self.send = function() {
       return realWs.send.apply(realWs, arguments)
     }
 
-    self.close = function() {
+    self.close = function(code, reason) {
+      if (typeof code !== 'number') {
+        reason = code
+        code = 1000
+      }
+
       if (pendingReconnect) {
         pendingReconnect = null
         clearTimeout(pendingReconnect)
       }
       reconnectWhenOnlineAgain = false
-      return realWs.close.apply(realWs, arguments)
+      detachConnectivityEvents()
+
+      return realWs.close(code, reason)
     }
 
     function reconnect(event) {
@@ -105,7 +143,8 @@
 
       connectTimeout = setTimeout(function() {
         connectTimeout = null
-        self.dispatchEvent(Object.assign(new CustomEvent('connecting'), {
+        detachConnectivityEvents()
+        self.dispatchEvent(Object.assign(new CustomEvent('timeout'), {
           attempts: attempts,
           reconnects: reconnects
         }))
@@ -121,20 +160,11 @@
           }
         })
       })
+
+      attachConnectivityEvents()
     }
 
     newWebSocket()
-
-    global.addEventListener('online', function(event) {
-      if (reconnectWhenOnlineAgain && !pendingReconnect) {
-        reconnect(event)
-      }
-    })
-
-    global.addEventListener('offline', function() {
-      self.close()
-      reconnectWhenOnlineAgain = true
-    })
   }
 
   RobustWebSocket.defaultOptions = {

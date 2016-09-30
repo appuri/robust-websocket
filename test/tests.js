@@ -97,7 +97,15 @@ describe('RobustWebSocket', function() {
       }).should.throw(Error)
     })
 
-    it('should work in a web worker')
+    it('should work in a web worker', function(done) {
+      var worker = new Worker('./webworker.js')
+
+      worker.onmessage = function(event) {
+        event.data.should.equal('howdy')
+        done()
+      }
+    })
+
     it('should work with different binary types')
     it('should support the protocols parameter')
   })

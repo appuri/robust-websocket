@@ -17,6 +17,7 @@
         attempts = 0,
         reconnects = -1,
         reconnectWhenOnlineAgain = false,
+        explicitlyClosed = false,
         pendingReconnect,
         opts = Object.assign({},
           RobustWebSocket.defaultOptions,
@@ -83,13 +84,14 @@
         clearTimeout(pendingReconnect)
       }
       reconnectWhenOnlineAgain = false
+      explicitlyClosed = true
       detachConnectivityEvents()
 
       return realWs.close(code, reason)
     }
 
     function reconnect(event) {
-      if (event.code === 1000) {
+      if (event.code === 1000 || explicitlyClosed) {
         attempts = 0
         return
       }

@@ -1,7 +1,8 @@
 describe('RobustWebSocket', function() {
   var ws, serverUrl = location.origin.replace('http', 'ws'),
       isSafari = window.webkitCancelAnimationFrame && !window.webkitRTCPeerConnection,
-      isIE = Object.hasOwnProperty.call(window, 'ActiveXObject')
+      isIE = Object.hasOwnProperty.call(window, 'ActiveXObject'),
+      isIEOrEdge = isIE || !!window.MSStream
 
   afterEach(function() {
     Mocha.onLine = true
@@ -85,7 +86,7 @@ describe('RobustWebSocket', function() {
       })
     })
 
-    it('should rethrow errors', !isIE && function() {
+    it('should rethrow errors', !isIEOrEdge && function() {
       (function() {
         new RobustWebSocket('localhost:11099')
       }).should.throw(Error)
@@ -105,8 +106,10 @@ describe('RobustWebSocket', function() {
     return function() {
       ws = new RobustWebSocket(serverUrl + '/?exitCode=' + code + '&exitMessage=alldone')
       ws.onclose = sinon.spy(function(evt) {
-        !isIE && evt.code.should.equal(code)
-        evt.reason.should.equal('alldone')
+        if (!isIEOrEdge) {
+          evt.code.should.equal(code)
+          evt.reason.should.equal('alldone')
+        }
       })
       ws.onopen = sinon.spy()
 
@@ -128,8 +131,10 @@ describe('RobustWebSocket', function() {
     it('should reconnect when a server reboots (1012)', function() {
       ws = new RobustWebSocket(serverUrl + '/?exitCode=1012&exitMessage=alldone&delay=250')
       ws.onclose = sinon.spy(function(evt) {
-        !isIE && evt.code.should.equal(1012)
-        evt.reason.should.equal('alldone')
+        if (!isIEOrEdge) {
+          evt.code.should.equal(1012)
+          evt.reason.should.equal('alldone')
+        }
       })
       ws.onopen = sinon.spy()
 
@@ -139,14 +144,14 @@ describe('RobustWebSocket', function() {
       })
     })
 
-    it('should not reconnect on normal disconnects (1000)', shouldNotReconnect(1000))
-    it('should not reconnect 1008 by default (HTTP 400 equvalent)', shouldNotReconnect(1008))
-    it('should not reconnect 1011 by default (HTTP 500 equvalent)', shouldNotReconnect(1011))
+    it('should not reconnect on normal disconnects (1000)', !isIEOrEdge && shouldNotReconnect(1000))
+    it('should not reconnect 1008 by default (HTTP 400 equvalent)', !isIEOrEdge && shouldNotReconnect(1008))
+    it('should not reconnect 1011 by default (HTTP 500 equvalent)', !isIEOrEdge && shouldNotReconnect(1011))
 
     it('should emit connecting events when reconnecting (1001)', function() {
       ws = new RobustWebSocket(serverUrl + '/?exitCode=1001')
       ws.onclose = sinon.spy(function(evt) {
-        evt.code.should.equal(1001)
+        !isIEOrEdge && evt.code.should.equal(1001)
         evt.reason.should.equal('')
       })
 

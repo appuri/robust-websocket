@@ -1,4 +1,8 @@
-importScripts('../robust-websocket.js')
+importScripts(
+  '../node_modules/object.assign/dist/browser.js',
+  './CustomEvent.js',
+  '../robust-websocket.js'
+)
 
 var ws = new RobustWebSocket('ws://localhost:9999/echo')
 ws.onopen = function() {

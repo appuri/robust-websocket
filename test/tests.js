@@ -212,8 +212,6 @@ describe('RobustWebSocket', function() {
       })
     })
 
-    it('should emit a timeout event if the connection timed out')
-
     it('should not try to reconnect while offline, trying again when online', function() {
       this.timeout(8000)
       Mocha.onLine = false
@@ -303,6 +301,81 @@ describe('RobustWebSocket', function() {
       }).then(function() {
         ws.onclose.should.have.been.calledOnce
         ws.onclose.should.have.been.calledOnce
+      })
+    })
+  })
+
+  describe('extra features', function() {
+    it('should emit a timeout event if the connection timed out')
+
+    it('should allow the socket to be reopened', function() {
+      ws = new RobustWebSocket(serverUrl + '/echo')
+      ws.onclose = sinon.spy()
+      ws.onopen = sinon.spy()
+
+      return pollUntilPassing(function() {
+        ws.onopen.should.have.been.calledOnce
+        ws.onclose.should.have.not.been.called
+        ws.readyState.should.equal(WebSocket.OPEN)
+      }).then(function() {
+        ws.close()
+
+        return pollUntilPassing(function() {
+          ws.onopen.should.have.been.calledOnce
+          ws.onclose.should.have.been.calledOnce
+          ws.readyState.should.equal(WebSocket.CLOSED)
+        })
+      }).then(function() {
+        return Promise.delay(100)
+      }).then(function() {
+        ws.open()
+
+        return pollUntilPassing(function() {
+          ws.onopen.should.have.been.calledTwice
+          ws.onclose.should.have.been.calledOnce
+          ws.readyState.should.equal(WebSocket.OPEN)
+        })
+      })
+    })
+
+    it('should not reconnect if the socket is already opened when open is called', function() {
+      ws = new RobustWebSocket(serverUrl + '/echo')
+      ws.onclose = sinon.spy()
+      ws.onopen = sinon.spy()
+
+      return pollUntilPassing(function() {
+        ws.onopen.should.have.been.calledOnce
+        ws.readyState.should.equal(WebSocket.OPEN)
+      }).then(function() {
+        return Promise.delay(100)
+      }).then(function() {
+        ws.open()
+        return Promise.delay(300)
+      }).then(function() {
+        ws.onopen.should.have.been.calledOnce
+        ws.onclose.should.have.not.been.called
+        ws.readyState.should.equal(WebSocket.OPEN)
+      })
+    })
+
+    it('should not automatically open the connection if requested', function() {
+      ws = new RobustWebSocket(serverUrl + '/echo', null, {
+        automaticOpen: false
+      })
+      ws.onclose = sinon.spy()
+      ws.onopen = sinon.spy()
+
+      return Promise.delay(400).then(function() {
+        ws.onopen.should.have.not.been.called
+        ws.onclose.should.have.not.been.called
+        should.not.exist(ws.readyState)
+
+        ws.open()
+
+        return pollUntilPassing(function() {
+          ws.onopen.should.have.been.calledOnce
+          ws.readyState.should.equal(WebSocket.OPEN)
+        })
       })
     })
   })

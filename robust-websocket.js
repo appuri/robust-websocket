@@ -12,7 +12,8 @@
 })(function(global, navigator) {
 
   var RobustWebSocket = function(url, protocols, userOptions) {
-    var realWs = {}, connectTimeout,
+    var realWs = { close: function() {} },
+        connectTimeout,
         self = this,
         attempts = 0,
         reconnects = -1,
@@ -38,16 +39,20 @@
       })
     })
 
-    var ononline = function(event) {
-      if (reconnectWhenOnlineAgain && !pendingReconnect) {
-        reconnect(event)
-      }
-    },
-    onoffline = function() {
+    function clearPendingReconnectIfNeeded() {
       if (pendingReconnect) {
         pendingReconnect = null
         clearTimeout(pendingReconnect)
       }
+    }
+
+    var ononline = function(event) {
+      if (reconnectWhenOnlineAgain) {
+        clearPendingReconnectIfNeeded()
+        reconnect(event)
+      }
+    },
+    onoffline = function() {
       reconnectWhenOnlineAgain = true
       realWs.close(1000)
     },
@@ -79,15 +84,22 @@
         code = 1000
       }
 
-      if (pendingReconnect) {
-        pendingReconnect = null
-        clearTimeout(pendingReconnect)
-      }
+      clearPendingReconnectIfNeeded()
       reconnectWhenOnlineAgain = false
       explicitlyClosed = true
       detachConnectivityEvents()
 
       return realWs.close(code, reason)
+    }
+
+    self.open = function() {
+      if (realWs.readyState !== WebSocket.OPEN && realWs.readyState !== WebSocket.CONNECTING) {
+        clearPendingReconnectIfNeeded()
+        reconnectWhenOnlineAgain = false
+        explicitlyClosed = false
+
+        newWebSocket()
+      }
     }
 
     function reconnect(event) {
@@ -166,7 +178,9 @@
       attachConnectivityEvents()
     }
 
-    newWebSocket()
+    if (opts.automaticOpen) {
+      newWebSocket()
+    }
   }
 
   RobustWebSocket.defaultOptions = {
@@ -179,7 +193,11 @@
     shouldReconnect: function(event, ws) {
       if (event.code === 1008 || event.code === 1011) return
       return [0, 3000, 10000][ws.attempts]
-    }
+    },
+
+    // Create and connect the WebSocket when the instance is instantiated.
+    // Defaults to true to match standard WebSocket behavior
+    automaticOpen: true
   }
 
   RobustWebSocket.prototype.binaryType = 'blob'

@@ -2,7 +2,8 @@ describe('RobustWebSocket', function() {
   var ws, serverUrl = location.origin.replace('http', 'ws'),
       isSafari = window.webkitCancelAnimationFrame && !window.webkitRTCPeerConnection,
       isIE = Object.hasOwnProperty.call(window, 'ActiveXObject'),
-      isIEOrEdge = isIE || !!window.MSStream
+      isEdge = !!window.MSStream,
+      isIEOrEdge = isIE || isEdge
 
   afterEach(function() {
     Mocha.onLine = true
@@ -97,7 +98,7 @@ describe('RobustWebSocket', function() {
       }).should.throw(Error)
     })
 
-    it('should work in a web worker', function(done) {
+    it('should work in a web worker', !isSafari && !isEdge && function(done) {
       var worker = new Worker('./webworker.js')
 
       worker.onmessage = function(event) {

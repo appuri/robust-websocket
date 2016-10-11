@@ -59,9 +59,12 @@ module.exports = function(grunt) {
             platform: 'OS X 10.11',
             version: '9'
           }, {
+            browserName: 'safari',
+            version: '8'
+          }, {
             browserName: 'android',
             platform: 'Linux',
-            version: '6.0'
+            version: '5.0'
           }, {
             browserName: 'googlechrome',
             platform: 'linux'
@@ -70,7 +73,7 @@ module.exports = function(grunt) {
             platform: 'linux'
           }, {
             browserName: 'microsoftedge',
-            platform: 'win8'
+            platform: 'win10'
           }, {
             browserName: 'internet explorer',
             version: '11'

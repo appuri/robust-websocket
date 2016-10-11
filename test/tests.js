@@ -5,6 +5,8 @@ describe('RobustWebSocket', function() {
       isEdge = !!window.MSStream,
       isIEOrEdge = isIE || isEdge
 
+  this.retries(3)
+
   afterEach(function() {
     Mocha.onLine = true
     try {

@@ -55,20 +55,13 @@ module.exports = function(grunt) {
             platform: 'OS X 10.10',
             version: '9.3'
           }, {
-            browserName: 'iphone',
-            platform: 'OS X 10.10',
-            version: '8.4'
-          }, {
             browserName: 'safari',
             platform: 'OS X 10.11',
             version: '9'
           }, {
-            browserName: 'safari',
-            version: '8'
-          }, {
             browserName: 'android',
             platform: 'Linux',
-            version: '5.0'
+            version: '6.0'
           }, {
             browserName: 'googlechrome',
             platform: 'linux'
@@ -77,15 +70,11 @@ module.exports = function(grunt) {
             platform: 'linux'
           }, {
             browserName: 'microsoftedge',
-            platform: 'win10'
+            platform: 'win8'
           }, {
             browserName: 'internet explorer',
             version: '11'
-          }/*, {
-            browserName: 'internet explorer',
-            platform: 'WIN7',
-            version: '10'
-          }*/],
+          }],
           testname: 'RobustWebSocket tests',
           tags: [process.env.CIRCLE_BRANCH || 'local']
         }

@@ -71,9 +71,9 @@ module.exports = function(grunt) {
           }, {
             browserName: 'firefox',
             platform: 'linux'
-          }, {
-            browserName: 'microsoftedge',
-            platform: 'win10'
+          // }, {
+          //   browserName: 'microsoftedge',
+          //   platform: 'win10'
           }, {
             browserName: 'internet explorer',
             version: '11'

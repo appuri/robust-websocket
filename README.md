@@ -17,15 +17,20 @@ It is error-code aware and will not reconnect on 1008 (HTTP 400 equivalent) and 
 
 ## Usage
 
-Use it as you would a normal websocket:
+[CodePen Example](https://codepen.io/nathanboktae/pen/RoLXmw)
 
+Use it as you would a normal websocket:
+ 
 ```javascript
 var ws = new RobustWebSocket('ws://echo.websocket.org/')
+
+ws.addEventListener('open', function(event) {
+  ws.send('Hello!')
+})
+
 ws.addEventListener('message', function(event) {
   console.log('we got: ' + event.data)
 })
-
-ws.send('Hello!')
 ```
 
 But with an optional set of options you can specify as a 3rd parameter

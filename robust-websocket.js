@@ -235,4 +235,4 @@
   }
 
   return RobustWebSocket
-}, this)
+}, typeof window != 'undefined' ? window : global)

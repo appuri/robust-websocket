@@ -20,7 +20,7 @@ It is error-code aware and will not reconnect on 1008 (HTTP 400 equivalent) and 
 [CodePen Example](https://codepen.io/nathanboktae/pen/RoLXmw)
 
 Use it as you would a normal websocket:
- 
+
 ```javascript
 var ws = new RobustWebSocket('ws://echo.websocket.org/')
 
@@ -35,15 +35,23 @@ ws.addEventListener('message', function(event) {
 
 But with an optional set of options you can specify as a 3rd parameter
 
-#### `timeout`
+```javascript
+var ws = new RobustWebSocket('ws://echo.websocket.org/', null {
+   // The number of milliseconds to wait before a connection is considered to have timed out. Defaults to 4 seconds.
+   timeout: 4000,
+  // A function that given a CloseEvent or an online event (https://developer.mozilla.org/en-US/docs/Online_and_offline_events) and the `RobustWebSocket`,
+  // will return the number of milliseconds to wait to reconnect, or a non-Number to not reconnect.
+  // see below for more examples.
+  shouldReconnect: function(event, thisRobustWebsocket) {
+    return thisRobustWebsocket.reconnects <= 20 && 0
+  },
+  // A boolean indicating whether or not to open the connection automatically. Defaults to true, matching native [WebSocket] behavior.
+  // You can open the websocket by calling `open()` when you are ready. You can close and re-open the RobustWebSocket instance as much as you wish.
+  automaticOpen: true
+})
+```
 
-The number of milliseconds to wait before a connection is considered to have timed out. Defaults to 4 seconds.
-
-#### `shouldReconnect`
-
-A function that given a [CloseEvent] or [online event](https://developer.mozilla.org/en-US/docs/Online_and_offline_events) and the `RobustWebSocket` will return the number of milliseconds to wait to reconnect, or a non-Number to not reconnect.
-
-Examples:
+#### `shouldReconnect` Examples
 
 Reconnect with an exponetial backoff on all errors
 ```javascript
@@ -67,11 +75,7 @@ function shouldReconnect(event, ws) {
 }
 ```
 
-#### `automaticOpen`
-
-A boolean indicating whether or not to open the connection automatically. Defaults to true, matching native [WebSocket] behavior.
-
-You can open the websocket by calling `open()` when you are ready. You can close and re-open the `RobustWebSocket` as much as you wish.
+See documentation for [CloseEvent] and [online event](https://developer.mozilla.org/en-US/docs/Online_and_offline_events), the two types of events that `shouldReconnect` will receive.
 
 ### Polyfills needed
 

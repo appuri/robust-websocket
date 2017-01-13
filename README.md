@@ -41,9 +41,10 @@ var ws = new RobustWebSocket('ws://echo.websocket.org/', null {
    timeout: 4000,
   // A function that given a CloseEvent or an online event (https://developer.mozilla.org/en-US/docs/Online_and_offline_events) and the `RobustWebSocket`,
   // will return the number of milliseconds to wait to reconnect, or a non-Number to not reconnect.
-  // see below for more examples.
-  shouldReconnect: function(event, thisRobustWebsocket) {
-    return thisRobustWebsocket.reconnects <= 20 && 0
+  // see below for more examples; below is the default functionality.
+  shouldReconnect: function(event, ws) {
+    if (event.code === 1008 || event.code === 1011) return
+    return [0, 3000, 10000][ws.attempts]
   },
   // A boolean indicating whether or not to open the connection automatically. Defaults to true, matching native [WebSocket] behavior.
   // You can open the websocket by calling `open()` when you are ready. You can close and re-open the RobustWebSocket instance as much as you wish.

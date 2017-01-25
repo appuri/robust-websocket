@@ -227,7 +227,6 @@
     if (!(event.type in this.listeners)) {
       return
     }
-    event.currentTarget = this
     var stack = this.listeners[event.type]
     for (var i = 0, l = stack.length; i < l; i++) {
       stack[i].call(this, event)

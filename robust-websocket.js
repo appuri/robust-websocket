@@ -41,8 +41,8 @@
 
     function clearPendingReconnectIfNeeded() {
       if (pendingReconnect) {
-        pendingReconnect = null
         clearTimeout(pendingReconnect)
+        pendingReconnect = null
       }
     }
 

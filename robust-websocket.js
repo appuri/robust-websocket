@@ -146,7 +146,7 @@
 
     function newWebSocket() {
       pendingReconnect = null
-      realWs = new WebSocket(url, protocols)
+      realWs = new WebSocket(url, protocols || undefined)
       realWs.binaryType = self.binaryType
 
       attempts++

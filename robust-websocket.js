@@ -103,7 +103,7 @@
     }
 
     function reconnect(event) {
-      if (event.code === 1000 || explicitlyClosed) {
+      if ((!opts.shouldReconnect.handle1000 && event.code === 1000) || explicitlyClosed) {
         attempts = 0
         return
       }

@@ -156,6 +156,35 @@ describe('RobustWebSocket', function() {
     })
 
     it('should not reconnect on normal disconnects (1000)', !isIEOrEdge && shouldNotReconnect(1000))
+
+    it('should call shouldReconnect on normal disconnects if handle1000 is true', !isIEOrEdge && function() {
+      // Issue #14
+      var attemptLog = [],
+      rounds = 0,
+      shouldReconnect = sinon.spy(function(event, ws) {
+        event.type.should.equal('close')
+        event.currentTarget.should.be.instanceof(WebSocket)
+        // ws.attempts is reset on each successful open, so we separately track the number of open-close
+        // cycles using `rounds`
+        attemptLog.push(ws.attempts)
+        return rounds++ < 2 && 100
+      })
+      shouldReconnect.handle1000 = true;
+
+      ws = new RobustWebSocket(serverUrl + '/?exitCode=1000&exitMessage=alldone&delay=250', null, {
+        shouldReconnect: shouldReconnect
+      })
+      ws.onclose = sinon.spy(function(evt) {
+        evt.code.should.equal(1000)
+      })
+      return pollUntilPassing(function() {
+        attemptLog.should.deep.equal([0, 0, 0])
+        ws.onclose.should.have.been.calledThrice
+        shouldReconnect.should.have.been.calledThrice
+        ws.readyState.should.equal(WebSocket.CLOSED)
+      })
+    })
+
     it('should not reconnect 1008 by default (HTTP 400 equvalent)', !isIEOrEdge && shouldNotReconnect(1008))
     it('should not reconnect 1011 by default (HTTP 500 equvalent)', !isIEOrEdge && shouldNotReconnect(1011))
 

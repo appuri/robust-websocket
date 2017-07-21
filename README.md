@@ -78,6 +78,11 @@ function shouldReconnect(event, ws) {
 
 See documentation for [CloseEvent] and [online event](https://developer.mozilla.org/en-US/docs/Online_and_offline_events), the two types of events that `shouldReconnect` will receive.
 
+Typically, websockets closed with code `1000` indicate that the socket
+closed normally. In these cases, `robust-websocket` won't call
+`shouldReconnect` (and will not attempt to reconnect), unless you set
+`shouldReconnect.handle1000` to `true`.
+
 ### Polyfills needed
 
 You may need these polyfills to support older browsers

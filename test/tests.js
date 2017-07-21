@@ -177,7 +177,7 @@ describe('RobustWebSocket', function() {
       ws.onclose = sinon.spy(function(evt) {
         evt.code.should.equal(1000)
       })
-      return Promise.delay(1000).then(function() {
+      return pollUntilPassing(function() {
         attemptLog.should.deep.equal([0, 0, 0])
         ws.onclose.should.have.been.calledThrice
         shouldReconnect.should.have.been.calledThrice

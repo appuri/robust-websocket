@@ -175,7 +175,9 @@
         })
       })
 
-      attachConnectivityEvents()
+      if (!opts.ignoreConnectivityEvents) {
+        attachConnectivityEvents()
+      }
     }
 
     if (opts.automaticOpen) {
@@ -194,6 +196,10 @@
       if (event.code === 1008 || event.code === 1011) return
       return [0, 3000, 10000][ws.attempts]
     },
+
+    // Flag to control whether attachement to navigator online/offline events
+    // should be disabled.
+    ignoreConnectivityEvents: false,
 
     // Create and connect the WebSocket when the instance is instantiated.
     // Defaults to true to match standard WebSocket behavior

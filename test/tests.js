@@ -410,5 +410,24 @@ describe('RobustWebSocket', function() {
         })
       })
     })
+
+    it('should not close a socket if ignoreConnectivityEvents is in use', function() {
+      ws = new RobustWebSocket(serverUrl + '/echo', null, {
+        ignoreConnectivityEvents: true,
+        shouldReconnect: function() { return 0 }
+      })
+      ws.onclose = sinon.spy()
+
+      return pollUntilPassing(function() {
+        ws.readyState.should.equal(WebSocket.OPEN)
+      }).then(function() {
+        Mocha.onLine = false
+
+        return Promise.delay(300)
+      }).then(function() {
+        ws.readyState.should.equal(WebSocket.OPEN)
+        ws.onclose.should.not.have.been.called
+      })
+    })
   })
 })
